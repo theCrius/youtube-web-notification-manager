@@ -16,7 +16,7 @@
   "content_scripts": [
     {
       "matches": ["*://www.youtube.com/*"],
-      "js": ["settings.js", "content.js"],
+      "js": ["browser-polyfill-shim.js", "settings.js", "content.js"],
       "css": ["content.css"],
       "run_at": "document_idle"
     }

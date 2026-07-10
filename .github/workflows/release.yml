@@ -1,0 +1,38 @@
+name: Release extensions
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Build extensions
+        run: node extension/build.js
+
+      - name: Zip extensions
+        run: |
+          cd extension/dist
+          zip -r "../../youtube-notification-manager-firefox-${GITHUB_REF_NAME}.zip" firefox
+          zip -r "../../youtube-notification-manager-chrome-${GITHUB_REF_NAME}.zip" chrome
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" \
+            "youtube-notification-manager-firefox-${GITHUB_REF_NAME}.zip" \
+            "youtube-notification-manager-chrome-${GITHUB_REF_NAME}.zip" \
+            --title "${GITHUB_REF_NAME}" \
+            --generate-notes
