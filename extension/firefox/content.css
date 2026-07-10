@@ -1,18 +1,48 @@
+/*
+ * YouTube sets a `dark` boolean attribute on <html> reflecting its resolved
+ * theme (light/dark/"use device theme" all collapse to this). Following that
+ * attribute - rather than our own prefers-color-scheme guess - keeps this UI
+ * in sync with whatever YouTube itself is actually showing.
+ */
+:root {
+  --ynm-bg: #ffffff;
+  --ynm-fg: #0f0f0f;
+  --ynm-border: rgba(0, 0, 0, 0.2);
+  --ynm-hover-bg: rgba(0, 0, 0, 0.1);
+  --ynm-input-bg: #f2f2f2;
+  --ynm-log-bg: #f2f2f2;
+  --ynm-shadow: rgba(0, 0, 0, 0.2);
+  --ynm-accent-bg: #065fd4;
+  --ynm-accent-fg: #ffffff;
+}
+
+html[dark] {
+  --ynm-bg: #212121;
+  --ynm-fg: #f1f1f1;
+  --ynm-border: rgba(255, 255, 255, 0.2);
+  --ynm-hover-bg: rgba(255, 255, 255, 0.1);
+  --ynm-input-bg: #303030;
+  --ynm-log-bg: #0f0f0f;
+  --ynm-shadow: rgba(0, 0, 0, 0.4);
+  --ynm-accent-bg: #3ea6ff;
+  --ynm-accent-fg: #0f0f0f;
+}
+
 .ynm-trigger-button {
   margin-left: 8px;
   padding: 0 16px;
   height: 36px;
   border-radius: 18px;
-  border: 1px solid rgba(128, 128, 128, 0.5);
+  border: 1px solid var(--ynm-border);
   background: transparent;
-  color: inherit;
+  color: var(--ynm-fg);
   font: inherit;
   font-size: 14px;
   cursor: pointer;
 }
 
 .ynm-trigger-button:hover {
-  background: rgba(128, 128, 128, 0.2);
+  background: var(--ynm-hover-bg);
 }
 
 .ynm-panel {
@@ -23,11 +53,11 @@
   width: 320px;
   max-height: 80vh;
   overflow-y: auto;
-  background: #212121;
-  color: #f1f1f1;
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: var(--ynm-bg);
+  color: var(--ynm-fg);
+  border: 1px solid var(--ynm-border);
   border-radius: 12px;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 4px 24px var(--ynm-shadow);
   padding: 16px;
   font: 14px system-ui, sans-serif;
 }
@@ -52,9 +82,9 @@
   font: inherit;
   padding: 4px 6px;
   border-radius: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  background: #303030;
-  color: inherit;
+  border: 1px solid var(--ynm-border);
+  background: var(--ynm-input-bg);
+  color: var(--ynm-fg);
   max-width: 130px;
 }
 
@@ -68,9 +98,9 @@
   font: inherit;
   padding: 6px 12px;
   border-radius: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  background: #3d3d3d;
-  color: inherit;
+  border: 1px solid var(--ynm-border);
+  background: var(--ynm-input-bg);
+  color: var(--ynm-fg);
   cursor: pointer;
 }
 
@@ -80,12 +110,12 @@
 }
 
 .ynm-actions button:hover:not(:disabled) {
-  background: #4d4d4d;
+  background: var(--ynm-hover-bg);
 }
 
 .ynm-run-btn {
-  background: #3ea6ff !important;
-  color: #0f0f0f !important;
+  background: var(--ynm-accent-bg) !important;
+  color: var(--ynm-accent-fg) !important;
   border-color: transparent !important;
   font-weight: 600;
 }
@@ -94,7 +124,7 @@
   margin-top: 12px;
   max-height: 220px;
   overflow-y: auto;
-  background: #0f0f0f;
+  background: var(--ynm-log-bg);
   border-radius: 6px;
   padding: 8px;
   font: 12px/1.4 ui-monospace, monospace;

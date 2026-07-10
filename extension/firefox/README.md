@@ -14,7 +14,7 @@ until you close Firefox / reload it).
 2. Click **Load Temporary Add-on…**
 3. Select the `manifest.json` file inside this `extension/firefox/` folder.
 4. Go to https://www.youtube.com/feed/channels — you should see a
-   **🔕 Set notifications…** button next to the sort dropdown ("New activity" /
+   **🔔 Set notifications…** button next to the sort dropdown ("New activity" /
    "Most relevant" / "A-Z").
 
 You'll need to repeat step 1-3 each time you restart Firefox, since temporary
@@ -22,7 +22,7 @@ add-ons don't persist.
 
 ## Usage
 
-1. Click **🔕 Set notifications…** to open the panel.
+1. Click **🔔 Set notifications…** to open the panel.
 2. Pick the preference to set (All / Personalised / None), whether to run as
    a dry run first (recommended — it opens each menu and confirms it can find
    the option, without clicking it), and optionally a limit on how many

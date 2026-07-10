@@ -202,7 +202,7 @@ function ynmEnsureButtonInjected() {
   btn.id = "ynm-trigger-button";
   btn.className = "ynm-trigger-button";
   btn.type = "button";
-  btn.textContent = "🔕 Set notifications…";
+  btn.textContent = "🔔 Set notifications…";
   btn.addEventListener("click", ynmTogglePanel);
   anchor.insertAdjacentElement("afterend", btn);
 }
