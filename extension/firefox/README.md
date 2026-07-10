@@ -10,9 +10,23 @@ until you close Firefox / reload it).
 
 ## Install (temporary add-on)
 
+This folder only holds the Firefox-specific `manifest.json` and
+`background.js` — the rest of the extension lives in
+[`../shared/`](../shared/), since it's identical across browsers. Run the
+build script first to assemble a complete, loadable copy:
+
+```sh
+node extension/build.js
+```
+
+That produces `extension/dist/firefox/` (and `extension/dist/chrome/`).
+Re-run it after pulling changes to either `extension/shared/` or
+`extension/firefox/`.
+
 1. Open Firefox and go to `about:debugging#/runtime/this-firefox`
 2. Click **Load Temporary Add-on…**
-3. Select the `manifest.json` file inside this `extension/firefox/` folder.
+3. Select the `manifest.json` file inside `extension/dist/firefox/` (not this
+   `extension/firefox/` folder — that one is missing the shared files).
 4. Go to https://www.youtube.com/feed/channels — you should see a
    **🔔 Set notifications…** button next to the sort dropdown ("New activity" /
    "Most relevant" / "A-Z").
@@ -41,7 +55,10 @@ request for them.
 
 ## How it works
 
-Same approach as the console script in the repo root: for each channel row
+Same approach as the standalone console script (see
+[`../../standalone-script/`](../../standalone-script/)): for each channel row
 it clicks the notification bell, waits for the dropdown, and clicks the
 target option — driving YouTube's real page UI rather than making raw HTTP
-requests, so there's no session/auth token handling involved.
+requests, so there's no session/auth token handling involved. The logic
+itself lives in [`../shared/content.js`](../shared/content.js), shared with
+the Chrome extension.
