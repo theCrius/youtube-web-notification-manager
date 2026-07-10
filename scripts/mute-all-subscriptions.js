@@ -12,8 +12,15 @@
 // raw API call but doesn't require touching session cookies/tokens.
 //
 // Safe to re-run: clicking "None" on an already-muted channel is a no-op.
+//
+// Before running for real, set DRY_RUN to true and (optionally) LIMIT to a
+// small number to verify it finds the right channels/menu items without
+// changing anything - it opens each menu, confirms it can find "None", logs
+// it, then closes the menu without clicking.
 
 (async () => {
+  const DRY_RUN = true; // set to false to actually apply the "None" setting
+  const LIMIT = 5; // process only the first N channels; set to null for all
   const DELAY_MIN_MS = 500;
   const DELAY_MAX_MS = 900;
   const MENU_TIMEOUT_MS = 4000;
@@ -65,11 +72,22 @@
       return;
     }
 
+    if (DRY_RUN) {
+      console.log(`[dry-run] would mute "${name}" (found "None" option OK)`);
+      document.body.click(); // close the menu without selecting anything
+      await jitter();
+      return;
+    }
+
     const clickTarget = noneItem.querySelector('tp-yt-paper-item') || noneItem;
     clickTarget.click();
     console.log(`[muted] ${name}`);
     await jitter();
   };
+
+  if (DRY_RUN) {
+    console.log(`Running in DRY_RUN mode - no settings will be changed. Set DRY_RUN = false to apply for real.`);
+  }
 
   const processed = new Set();
   let idleScrolls = 0;
@@ -77,7 +95,10 @@
   let failed = 0;
 
   while (idleScrolls < MAX_IDLE_SCROLLS) {
-    const rows = Array.from(document.querySelectorAll('ytd-channel-renderer')).filter((row) => !processed.has(row));
+    if (LIMIT !== null && processed.size >= LIMIT) break;
+
+    let rows = Array.from(document.querySelectorAll('ytd-channel-renderer')).filter((row) => !processed.has(row));
+    if (LIMIT !== null) rows = rows.slice(0, LIMIT - processed.size);
 
     if (rows.length === 0) {
       window.scrollTo(0, document.documentElement.scrollHeight);
@@ -102,5 +123,5 @@
     await sleep(1200);
   }
 
-  console.log(`Done. Processed ${processed.size} channel(s), ${failed} error(s).`);
+  console.log(`Done. Processed ${processed.size} channel(s), ${failed} error(s).${DRY_RUN ? ' (DRY_RUN - nothing was changed)' : ''}`);
 })();

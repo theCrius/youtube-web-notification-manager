@@ -17,6 +17,21 @@ notification preference to "None" (mute), since YouTube has no built-in
 
 Re-running the script is safe — muting an already-muted channel is a no-op.
 
+### Test before applying
+
+The script starts in dry-run mode by default (`DRY_RUN = true` near the top,
+with `LIMIT = 5` so it only touches the first 5 channels). In this mode it
+opens each channel's notification menu, confirms it can find "None", logs
+`[dry-run] would mute "..."`, and closes the menu without clicking anything —
+nothing on your account changes.
+
+1. Paste the script as-is and run it first. Check the console: every channel
+   should get a `[dry-run]` line, with no `[fail]`/`[error]` lines.
+2. If that looks right, edit the two constants at the top of the script
+   before pasting again:
+   - `DRY_RUN = false` to actually apply the change
+   - `LIMIT = null` to process all channels instead of just the first 5
+
 ## How it works
 
 The script drives the real page UI: for each channel row it clicks the
