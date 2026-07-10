@@ -1,4 +1,4 @@
-// YouTube: set every subscribed channel's notification preference to "None".
+// YouTube: bulk-set every subscribed channel's notification preference.
 //
 // Usage:
 //   1. Go to https://www.youtube.com/feed/channels and let the page load.
@@ -7,19 +7,21 @@
 //      down automatically to pick up channels that load lazily.
 //
 // This does NOT make raw HTTP requests. It drives the real page UI (clicks
-// the bell button, then clicks "None" in the dropdown) so YouTube's own
-// frontend code sends the request with correct auth. This is slower than a
-// raw API call but doesn't require touching session cookies/tokens.
+// the bell button, then clicks the target option in the dropdown) so
+// YouTube's own frontend code sends the request with correct auth. This is
+// slower than a raw API call but doesn't require touching session
+// cookies/tokens.
 //
-// Safe to re-run: clicking "None" on an already-muted channel is a no-op.
+// Safe to re-run: reselecting a channel's current preference is a no-op.
 //
 // Before running for real, set DRY_RUN to true and (optionally) LIMIT to a
 // small number to verify it finds the right channels/menu items without
-// changing anything - it opens each menu, confirms it can find "None", logs
-// it, then closes the menu without clicking.
+// changing anything - it opens each menu, confirms it can find the target
+// option, logs it, then closes the menu without clicking.
 
 (async () => {
-  const DRY_RUN = true; // set to false to actually apply the "None" setting
+  const TARGET_PREFERENCE = 'None'; // one of: 'All', 'Personalised', 'None'
+  const DRY_RUN = true; // set to false to actually apply TARGET_PREFERENCE
   const LIMIT = 5; // process only the first N channels; set to null for all
   const DEBUG = false; // set to true to see YouTube's own noisy-but-harmless console errors too
   const DELAY_MIN_MS = 500;
@@ -78,16 +80,15 @@
   const getChannelName = (row) =>
     row.querySelector('#channel-title #text')?.textContent?.trim() || '(unknown channel)';
 
-  const findOpenNoneMenuItem = () => {
+  const findOpenMenuItem = (title) => {
     const items = Array.from(document.querySelectorAll('ytd-menu-popup-renderer ytd-menu-service-item-renderer'));
     return items.find((item) => {
       if (!isVisible(item)) return false;
-      const title = item.querySelector('.title')?.textContent?.trim();
-      return title === 'None';
+      return item.querySelector('.title')?.textContent?.trim() === title;
     });
   };
 
-  const muteChannel = async (row) => {
+  const setChannelPreference = async (row) => {
     const name = getChannelName(row);
     const bellBtn = row.querySelector('ytd-subscription-notification-toggle-button-renderer-next button');
 
@@ -99,26 +100,31 @@
     simulateClick(bellBtn);
     await jitter();
 
-    const noneItem = await waitFor(findOpenNoneMenuItem);
-    if (!noneItem) {
-      console.warn(`[fail] "None" option not found for "${name}" - closing menu and skipping`);
+    const targetItem = await waitFor(() => findOpenMenuItem(TARGET_PREFERENCE));
+    if (!targetItem) {
+      console.warn(`[fail] "${TARGET_PREFERENCE}" option not found for "${name}" - closing menu and skipping`);
       closeAnyOpenMenu();
       await jitter();
       return;
     }
 
     if (DRY_RUN) {
-      console.log(`[dry-run] would mute "${name}" (found "None" option OK)`);
+      console.log(`[dry-run] would set "${name}" to "${TARGET_PREFERENCE}" (option found OK)`);
       closeAnyOpenMenu();
       await jitter();
       return;
     }
 
-    const clickTarget = noneItem.querySelector('tp-yt-paper-item') || noneItem;
+    const clickTarget = targetItem.querySelector('tp-yt-paper-item') || targetItem;
     simulateClick(clickTarget);
-    console.log(`[muted] ${name}`);
+    console.log(`[set] "${name}" -> "${TARGET_PREFERENCE}"`);
     await jitter();
   };
+
+  if (!['All', 'Personalised', 'None'].includes(TARGET_PREFERENCE)) {
+    console.error(`Invalid TARGET_PREFERENCE "${TARGET_PREFERENCE}" - must be one of 'All', 'Personalised', 'None'.`);
+    return;
+  }
 
   if (DRY_RUN) {
     console.log(`Running in DRY_RUN mode - no settings will be changed. Set DRY_RUN = false to apply for real.`);
@@ -147,7 +153,7 @@
       for (const row of rows) {
         processed.add(row);
         try {
-          await muteChannel(row);
+          await setChannelPreference(row);
         } catch (err) {
           failed++;
           console.error(`[error] ${getChannelName(row)}:`, err);
