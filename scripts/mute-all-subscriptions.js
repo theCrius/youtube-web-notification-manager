@@ -21,6 +21,7 @@
 (async () => {
   const DRY_RUN = true; // set to false to actually apply the "None" setting
   const LIMIT = 5; // process only the first N channels; set to null for all
+  const DEBUG = false; // set to true to see YouTube's own noisy-but-harmless console errors too
   const DELAY_MIN_MS = 500;
   const DELAY_MAX_MS = 900;
   const MENU_TIMEOUT_MS = 4000;
@@ -123,7 +124,7 @@
     console.log(`Running in DRY_RUN mode - no settings will be changed. Set DRY_RUN = false to apply for real.`);
   }
 
-  window.addEventListener('error', suppressYtRippleNoise);
+  if (!DEBUG) window.addEventListener('error', suppressYtRippleNoise);
   try {
     const processed = new Set();
     let idleScrolls = 0;
@@ -159,6 +160,6 @@
 
     console.log(`Done. Processed ${processed.size} channel(s), ${failed} error(s).${DRY_RUN ? ' (DRY_RUN - nothing was changed)' : ''}`);
   } finally {
-    window.removeEventListener('error', suppressYtRippleNoise);
+    if (!DEBUG) window.removeEventListener('error', suppressYtRippleNoise);
   }
 })();

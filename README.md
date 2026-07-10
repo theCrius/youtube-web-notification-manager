@@ -32,6 +32,14 @@ nothing on your account changes.
    - `DRY_RUN = false` to actually apply the change
    - `LIMIT = null` to process all channels instead of just the first 5
 
+### Troubleshooting
+
+YouTube's own UI code throws a harmless but noisy console error in response
+to the script's clicks; by default the script filters that specific error out
+so the console stays readable. If something isn't working and you want to see
+everything (including that noise, in case it's relevant), set `DEBUG = true`
+at the top of the script before pasting.
+
 ## How it works
 
 The script drives the real page UI: for each channel row it clicks the
