@@ -11,6 +11,10 @@ do this for more than one channel at a time.
   (not published to addons.mozilla.org). See
   [`extension/firefox/README.md`](extension/firefox/README.md) for install
   instructions.
+- [`extension/chrome/`](extension/chrome/) — the same extension for Chrome,
+  currently local-install only (not published to the Chrome Web Store). See
+  [`extension/chrome/README.md`](extension/chrome/README.md) for install
+  instructions.
 
 ## Console script usage
 
