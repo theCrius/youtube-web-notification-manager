@@ -1,10 +1,18 @@
 # youtube-web-notification-manager
 
-A small browser console script to bulk-set all your YouTube subscriptions to
-the same notification preference (All / Personalised / None), since YouTube
-has no built-in way to do this for more than one channel at a time.
+Tools to bulk-set all your YouTube subscriptions to the same notification
+preference (All / Personalised / None), since YouTube has no built-in way to
+do this for more than one channel at a time.
 
-## Usage
+- [`scripts/mute-all-subscriptions.js`](scripts/mute-all-subscriptions.js) — a
+  one-off browser console script (see below).
+- [`extension/firefox/`](extension/firefox/) — a Firefox extension version
+  with an on-page button and a settings panel, currently local-install only
+  (not published to addons.mozilla.org). See
+  [`extension/firefox/README.md`](extension/firefox/README.md) for install
+  instructions.
+
+## Console script usage
 
 1. Sign in to YouTube and open https://www.youtube.com/feed/channels
 2. Let the page finish loading.
