@@ -30,6 +30,26 @@
   const jitter = () => sleep(DELAY_MIN_MS + Math.random() * (DELAY_MAX_MS - DELAY_MIN_MS));
   const isVisible = (el) => !!el && el.offsetParent !== null;
 
+  // A plain el.click() lacks real pointer coordinates, which trips up
+  // YouTube's own ripple/touch-feedback animation code (harmless but noisy
+  // console errors). Dispatching a fuller pointer/mouse event sequence with
+  // coordinates at the element's center avoids that.
+  const simulateClick = (el) => {
+    const rect = el.getBoundingClientRect();
+    const x = rect.left + rect.width / 2;
+    const y = rect.top + rect.height / 2;
+    const opts = { bubbles: true, cancelable: true, composed: true, view: window, clientX: x, clientY: y };
+    el.dispatchEvent(new PointerEvent('pointerdown', opts));
+    el.dispatchEvent(new MouseEvent('mousedown', opts));
+    el.dispatchEvent(new PointerEvent('pointerup', opts));
+    el.dispatchEvent(new MouseEvent('mouseup', opts));
+    el.dispatchEvent(new MouseEvent('click', opts));
+  };
+
+  const closeAnyOpenMenu = () => {
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', keyCode: 27, which: 27, bubbles: true }));
+  };
+
   const waitFor = async (fn, timeoutMs = MENU_TIMEOUT_MS, intervalMs = 100) => {
     const start = Date.now();
     while (Date.now() - start < timeoutMs) {
@@ -61,26 +81,26 @@
       return;
     }
 
-    bellBtn.click();
+    simulateClick(bellBtn);
     await jitter();
 
     const noneItem = await waitFor(findOpenNoneMenuItem);
     if (!noneItem) {
       console.warn(`[fail] "None" option not found for "${name}" - closing menu and skipping`);
-      document.body.click(); // best-effort close of any stray open menu
+      closeAnyOpenMenu();
       await jitter();
       return;
     }
 
     if (DRY_RUN) {
       console.log(`[dry-run] would mute "${name}" (found "None" option OK)`);
-      document.body.click(); // close the menu without selecting anything
+      closeAnyOpenMenu();
       await jitter();
       return;
     }
 
     const clickTarget = noneItem.querySelector('tp-yt-paper-item') || noneItem;
-    clickTarget.click();
+    simulateClick(clickTarget);
     console.log(`[muted] ${name}`);
     await jitter();
   };
