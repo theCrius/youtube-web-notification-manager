@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>YouTube Subscriptions Notification Manager — Settings</title>
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <h1>YouTube Subscriptions Notification Manager</h1>
+    <p class="ynm-opt-hint">
+      These are the defaults used when you open the panel from the "Set notifications…" button on
+      <code>youtube.com/feed/channels</code>. The preference/dry-run/limit fields there also update these defaults
+      whenever you run.
+    </p>
+
+    <form id="settings-form">
+      <fieldset>
+        <legend>Basics</legend>
+
+        <label class="ynm-opt-row">
+          Target preference
+          <select id="targetPreference">
+            <option value="All">All</option>
+            <option value="Personalised">Personalised</option>
+            <option value="None">None (mute)</option>
+          </select>
+        </label>
+
+        <label class="ynm-opt-row">
+          <input type="checkbox" id="dryRun" />
+          Dry run by default (preview only, no changes)
+        </label>
+
+        <label class="ynm-opt-row">
+          Channel limit
+          <input type="number" id="limit" min="1" placeholder="all channels" />
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Advanced</legend>
+
+        <label class="ynm-opt-row">
+          Delay between actions - minimum (ms)
+          <input type="number" id="delayMinMs" min="0" step="50" />
+        </label>
+
+        <label class="ynm-opt-row">
+          Delay between actions - maximum (ms)
+          <input type="number" id="delayMaxMs" min="0" step="50" />
+        </label>
+
+        <label class="ynm-opt-row">
+          Menu open timeout (ms)
+          <input type="number" id="menuTimeoutMs" min="500" step="500" />
+        </label>
+
+        <label class="ynm-opt-row">
+          Max idle scrolls before stopping
+          <input type="number" id="maxIdleScrolls" min="1" step="1" />
+        </label>
+
+        <label class="ynm-opt-row">
+          <input type="checkbox" id="debug" />
+          Debug mode (show YouTube's own harmless-but-noisy console errors)
+        </label>
+      </fieldset>
+
+      <div class="ynm-opt-actions">
+        <button type="submit">Save</button>
+        <button type="button" id="reset-btn">Reset to defaults</button>
+        <span id="save-status" class="ynm-opt-status"></span>
+      </div>
+    </form>
+
+    <script src="browser-polyfill-shim.js"></script>
+    <script src="settings.js"></script>
+    <script src="options.js"></script>
+  </body>
+</html>
