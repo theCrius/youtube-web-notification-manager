@@ -82,18 +82,22 @@ async function runBulkUpdate(settings, { onLog, shouldStop } = {}) {
 
     if (!bellBtn) {
       log(`[skip] no notification button found for "${name}" (maybe not subscribed via bell?)`);
-      return;
+      return "skip";
     }
 
     simulateClick(bellBtn);
     await jitter();
 
+    // Not every channel offers all four options (some only show e.g.
+    // "Disabled"/"Unsubscribe") - this isn't an error, just means that
+    // channel doesn't support the requested preference. Report it distinctly
+    // rather than folding it into "no errors".
     const targetItem = await waitFor(() => findOpenMenuItem(targetPreference));
     if (!targetItem) {
-      log(`[fail] "${targetPreference}" option not found for "${name}" - closing menu and skipping`);
+      log(`[unavailable] "${targetPreference}" option not offered for "${name}" - closing menu and skipping`);
       closeAnyOpenMenu();
       await jitter();
-      return;
+      return "unavailable";
     }
 
     // The currently-active option carries aria-selected="true"/is-selected on
@@ -103,20 +107,21 @@ async function runBulkUpdate(settings, { onLog, shouldStop } = {}) {
       log(`[skip] "${name}" already set to "${targetPreference}"`);
       closeAnyOpenMenu();
       await jitter();
-      return;
+      return "skip";
     }
 
     if (dryRun) {
       log(`[dry-run] would set "${name}" to "${targetPreference}" (option found OK)`);
       closeAnyOpenMenu();
       await jitter();
-      return;
+      return "dry-run";
     }
 
     const clickTarget = targetItem.querySelector("tp-yt-paper-item") || targetItem;
     simulateClick(clickTarget);
     log(`[set] "${name}" -> "${targetPreference}"`);
     await jitter();
+    return "set";
   };
 
   log(dryRun ? "Running in DRY RUN mode - no settings will be changed." : "Running for real - settings will be changed.");
@@ -126,6 +131,7 @@ async function runBulkUpdate(settings, { onLog, shouldStop } = {}) {
     const processed = new Set();
     let idleScrolls = 0;
     let failed = 0;
+    const unavailable = [];
 
     while (idleScrolls < maxIdleScrolls) {
       if (shouldStop?.()) {
@@ -148,11 +154,13 @@ async function runBulkUpdate(settings, { onLog, shouldStop } = {}) {
       for (const row of rows) {
         if (shouldStop?.()) break;
         processed.add(row);
+        const name = getChannelName(row);
         try {
-          await setChannelPreference(row);
+          const outcome = await setChannelPreference(row);
+          if (outcome === "unavailable") unavailable.push(name);
         } catch (err) {
           failed++;
-          log(`[error] ${getChannelName(row)}: ${err.message}`);
+          log(`[error] ${name}: ${err.message}`);
         }
       }
 
@@ -161,10 +169,14 @@ async function runBulkUpdate(settings, { onLog, shouldStop } = {}) {
     }
 
     log(
-      `Done. Processed ${processed.size} channel(s), ${failed} error(s).${
+      `Done. Processed ${processed.size} channel(s): ${failed} error(s), ${unavailable.length} missing the "${targetPreference}" option.${
         dryRun ? " (DRY RUN - nothing was changed)" : ""
       }`
     );
+    if (unavailable.length > 0) {
+      log(`Channels that don't offer "${targetPreference}" (check them manually):`);
+      for (const name of unavailable) log(`  - ${name}`);
+    }
   } finally {
     if (!debug) window.removeEventListener("error", suppressYtRippleNoise);
   }
