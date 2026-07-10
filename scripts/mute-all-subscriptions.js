@@ -108,6 +108,16 @@
       return;
     }
 
+    // The currently-active option carries aria-selected="true"/is-selected on
+    // the ytd-menu-service-item-renderer itself. If it's already the target,
+    // close without clicking so we never fire a redundant request.
+    if (targetItem.getAttribute('aria-selected') === 'true' || targetItem.hasAttribute('is-selected')) {
+      console.log(`[skip] "${name}" already set to "${TARGET_PREFERENCE}"`);
+      closeAnyOpenMenu();
+      await jitter();
+      return;
+    }
+
     if (DRY_RUN) {
       console.log(`[dry-run] would set "${name}" to "${TARGET_PREFERENCE}" (option found OK)`);
       closeAnyOpenMenu();

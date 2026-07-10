@@ -15,7 +15,10 @@ has no built-in way to do this for more than one channel at a time.
 6. It auto-scrolls to pick up channels that load lazily, and stops once a few
    scrolls in a row find nothing new.
 
-Re-running the script is safe — reselecting a channel's current preference is a no-op.
+Re-running the script is safe: before clicking anything, it checks whether a
+channel is already set to `TARGET_PREFERENCE` (via the menu item's selected
+state) and skips it with a `[skip] "..." already set to "..."` log — so
+already-matching channels never get an extra request sent for them.
 
 ### Choosing the preference
 
