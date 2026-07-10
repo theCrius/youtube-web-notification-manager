@@ -50,6 +50,20 @@
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', keyCode: 27, which: 27, bubbles: true }));
   };
 
+  // YouTube's own ripple/touch-feedback code throws a harmless, uncaught
+  // "classList, e is null" TypeError in its ui.js in response to our
+  // synthetic clicks. It doesn't affect functionality, but it's noisy -
+  // suppress just this known signature from the console while we run.
+  const isKnownYtRippleNoise = (event) =>
+    typeof event.message === 'string' &&
+    event.message.includes('classList') &&
+    typeof event.filename === 'string' &&
+    event.filename.includes('ui.js');
+
+  const suppressYtRippleNoise = (event) => {
+    if (isKnownYtRippleNoise(event)) event.preventDefault();
+  };
+
   const waitFor = async (fn, timeoutMs = MENU_TIMEOUT_MS, intervalMs = 100) => {
     const start = Date.now();
     while (Date.now() - start < timeoutMs) {
@@ -109,39 +123,42 @@
     console.log(`Running in DRY_RUN mode - no settings will be changed. Set DRY_RUN = false to apply for real.`);
   }
 
-  const processed = new Set();
-  let idleScrolls = 0;
-  let muted = 0;
-  let failed = 0;
+  window.addEventListener('error', suppressYtRippleNoise);
+  try {
+    const processed = new Set();
+    let idleScrolls = 0;
+    let failed = 0;
 
-  while (idleScrolls < MAX_IDLE_SCROLLS) {
-    if (LIMIT !== null && processed.size >= LIMIT) break;
+    while (idleScrolls < MAX_IDLE_SCROLLS) {
+      if (LIMIT !== null && processed.size >= LIMIT) break;
 
-    let rows = Array.from(document.querySelectorAll('ytd-channel-renderer')).filter((row) => !processed.has(row));
-    if (LIMIT !== null) rows = rows.slice(0, LIMIT - processed.size);
+      let rows = Array.from(document.querySelectorAll('ytd-channel-renderer')).filter((row) => !processed.has(row));
+      if (LIMIT !== null) rows = rows.slice(0, LIMIT - processed.size);
 
-    if (rows.length === 0) {
-      window.scrollTo(0, document.documentElement.scrollHeight);
-      await sleep(1500);
-      idleScrolls++;
-      continue;
-    }
-    idleScrolls = 0;
-
-    for (const row of rows) {
-      processed.add(row);
-      try {
-        await muteChannel(row);
-        muted++;
-      } catch (err) {
-        failed++;
-        console.error(`[error] ${getChannelName(row)}:`, err);
+      if (rows.length === 0) {
+        window.scrollTo(0, document.documentElement.scrollHeight);
+        await sleep(1500);
+        idleScrolls++;
+        continue;
       }
+      idleScrolls = 0;
+
+      for (const row of rows) {
+        processed.add(row);
+        try {
+          await muteChannel(row);
+        } catch (err) {
+          failed++;
+          console.error(`[error] ${getChannelName(row)}:`, err);
+        }
+      }
+
+      window.scrollTo(0, document.documentElement.scrollHeight);
+      await sleep(1200);
     }
 
-    window.scrollTo(0, document.documentElement.scrollHeight);
-    await sleep(1200);
+    console.log(`Done. Processed ${processed.size} channel(s), ${failed} error(s).${DRY_RUN ? ' (DRY_RUN - nothing was changed)' : ''}`);
+  } finally {
+    window.removeEventListener('error', suppressYtRippleNoise);
   }
-
-  console.log(`Done. Processed ${processed.size} channel(s), ${failed} error(s).${DRY_RUN ? ' (DRY_RUN - nothing was changed)' : ''}`);
 })();
