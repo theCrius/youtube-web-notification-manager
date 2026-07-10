@@ -94,18 +94,22 @@
 
     if (!bellBtn) {
       console.warn(`[skip] no notification button found for "${name}" (maybe not subscribed via bell?)`);
-      return;
+      return 'skip';
     }
 
     simulateClick(bellBtn);
     await jitter();
 
+    // Not every channel offers all four options (some only show e.g.
+    // "Disabled"/"Unsubscribe") - this isn't an error, just means that
+    // channel doesn't support the requested preference. Report it distinctly
+    // rather than folding it into "no errors".
     const targetItem = await waitFor(() => findOpenMenuItem(TARGET_PREFERENCE));
     if (!targetItem) {
-      console.warn(`[fail] "${TARGET_PREFERENCE}" option not found for "${name}" - closing menu and skipping`);
+      console.warn(`[unavailable] "${TARGET_PREFERENCE}" option not offered for "${name}" - closing menu and skipping`);
       closeAnyOpenMenu();
       await jitter();
-      return;
+      return 'unavailable';
     }
 
     // The currently-active option carries aria-selected="true"/is-selected on
@@ -115,20 +119,21 @@
       console.log(`[skip] "${name}" already set to "${TARGET_PREFERENCE}"`);
       closeAnyOpenMenu();
       await jitter();
-      return;
+      return 'skip';
     }
 
     if (DRY_RUN) {
       console.log(`[dry-run] would set "${name}" to "${TARGET_PREFERENCE}" (option found OK)`);
       closeAnyOpenMenu();
       await jitter();
-      return;
+      return 'dry-run';
     }
 
     const clickTarget = targetItem.querySelector('tp-yt-paper-item') || targetItem;
     simulateClick(clickTarget);
     console.log(`[set] "${name}" -> "${TARGET_PREFERENCE}"`);
     await jitter();
+    return 'set';
   };
 
   if (!['All', 'Personalised', 'None'].includes(TARGET_PREFERENCE)) {
@@ -145,6 +150,7 @@
     const processed = new Set();
     let idleScrolls = 0;
     let failed = 0;
+    const unavailable = [];
 
     while (idleScrolls < MAX_IDLE_SCROLLS) {
       if (LIMIT !== null && processed.size >= LIMIT) break;
@@ -162,11 +168,13 @@
 
       for (const row of rows) {
         processed.add(row);
+        const name = getChannelName(row);
         try {
-          await setChannelPreference(row);
+          const outcome = await setChannelPreference(row);
+          if (outcome === 'unavailable') unavailable.push(name);
         } catch (err) {
           failed++;
-          console.error(`[error] ${getChannelName(row)}:`, err);
+          console.error(`[error] ${name}:`, err);
         }
       }
 
@@ -174,7 +182,15 @@
       await sleep(1200);
     }
 
-    console.log(`Done. Processed ${processed.size} channel(s), ${failed} error(s).${DRY_RUN ? ' (DRY_RUN - nothing was changed)' : ''}`);
+    console.log(
+      `Done. Processed ${processed.size} channel(s): ${failed} error(s), ${unavailable.length} missing the "${TARGET_PREFERENCE}" option.${
+        DRY_RUN ? ' (DRY_RUN - nothing was changed)' : ''
+      }`
+    );
+    if (unavailable.length > 0) {
+      console.log(`Channels that don't offer "${TARGET_PREFERENCE}" (check them manually):`);
+      for (const name of unavailable) console.log(`  - ${name}`);
+    }
   } finally {
     if (!DEBUG) window.removeEventListener('error', suppressYtRippleNoise);
   }
