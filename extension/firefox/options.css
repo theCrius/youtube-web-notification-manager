@@ -1,0 +1,62 @@
+body {
+  font-family: system-ui, sans-serif;
+  max-width: 40rem;
+  margin: 2rem auto;
+  padding: 0 1rem;
+  color: #1a1a1a;
+  background: #fff;
+}
+
+@media (prefers-color-scheme: dark) {
+  body {
+    color: #e8e8e8;
+    background: #1a1a1a;
+  }
+}
+
+h1 {
+  font-size: 1.25rem;
+}
+
+.ynm-opt-hint {
+  opacity: 0.75;
+  font-size: 0.9rem;
+}
+
+fieldset {
+  border: 1px solid currentColor;
+  border-radius: 8px;
+  opacity: 0.95;
+  margin-bottom: 1rem;
+}
+
+.ynm-opt-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0.6rem 0;
+}
+
+.ynm-opt-row input[type="number"],
+.ynm-opt-row select {
+  font: inherit;
+  padding: 0.25rem 0.5rem;
+}
+
+.ynm-opt-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.ynm-opt-actions button {
+  font: inherit;
+  padding: 0.4rem 0.9rem;
+  cursor: pointer;
+}
+
+.ynm-opt-status {
+  opacity: 0.75;
+  font-size: 0.9rem;
+}

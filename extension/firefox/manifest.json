@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "YouTube Subscriptions Notification Manager",
+  "version": "0.1.0",
+  "description": "Bulk-set notification preferences (All / Personalised / None) for your YouTube subscriptions from the Channels page.",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "yt-notification-manager@thecrius"
+    }
+  },
+  "permissions": ["storage"],
+  "host_permissions": ["*://www.youtube.com/*"],
+  "background": {
+    "scripts": ["background.js"]
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://www.youtube.com/*"],
+      "js": ["settings.js", "content.js"],
+      "css": ["content.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  }
+}
