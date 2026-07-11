@@ -5,7 +5,10 @@
   "description": "Bulk-set notification preferences (All / Personalised / None) for your YouTube subscriptions from the Channels page.",
   "browser_specific_settings": {
     "gecko": {
-      "id": "yt-notification-manager@thecrius"
+      "id": "yt-notification-manager@thecrius",
+      "data_collection_permissions": {
+        "required": ["none"]
+      }
     }
   },
   "permissions": ["storage"],
