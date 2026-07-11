@@ -28,3 +28,8 @@ assemble a loadable copy — `node extension/build.js`).
 Prefer not to install anything? [`standalone-script/`](standalone-script/)
 has a one-off script you paste into the DevTools console and run — same
 underlying logic as the extensions, no install, nothing left behind.
+
+## License
+
+[PolyForm Noncommercial 1.0.0](LICENSE) — free to use, modify, and share for
+any noncommercial purpose, with attribution. Not licensed for commercial use.
