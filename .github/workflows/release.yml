@@ -1,0 +1,61 @@
+name: Release extensions
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Build extensions
+        run: node extension/build.js
+
+      - name: Zip extensions
+        run: |
+          cd extension/dist
+          zip -r "../../youtube-notification-manager-firefox-${GITHUB_REF_NAME}.zip" firefox
+          zip -r "../../youtube-notification-manager-chrome-${GITHUB_REF_NAME}.zip" chrome
+
+      - name: Create or update GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # A release can already exist for this tag (e.g. created via GitHub's
+          # web UI, which has no way to push a bare tag without also drafting
+          # a release). Upload to it instead of failing in that case.
+          if gh release view "${GITHUB_REF_NAME}" >/dev/null 2>&1; then
+            gh release upload "${GITHUB_REF_NAME}" \
+              "youtube-notification-manager-firefox-${GITHUB_REF_NAME}.zip" \
+              "youtube-notification-manager-chrome-${GITHUB_REF_NAME}.zip" \
+              --clobber
+          else
+            # --generate-notes' auto-detection of the previous release isn't
+            # reliable here (e.g. it can miss releases whose commit isn't a
+            # git ancestor of this one, such as after a rebase) - look it up
+            # explicitly the same way the "Previous tag" picker in the
+            # release UI does: the most recently published other release.
+            PREVIOUS_TAG=$(gh release list --exclude-drafts --json tagName,createdAt \
+              --jq '[.[] | select(.tagName != env.GITHUB_REF_NAME)] | sort_by(.createdAt) | last | .tagName // empty')
+
+            NOTES_ARGS=(--generate-notes)
+            if [ -n "$PREVIOUS_TAG" ]; then
+              NOTES_ARGS+=(--notes-start-tag "$PREVIOUS_TAG")
+            fi
+
+            gh release create "${GITHUB_REF_NAME}" \
+              "youtube-notification-manager-firefox-${GITHUB_REF_NAME}.zip" \
+              "youtube-notification-manager-chrome-${GITHUB_REF_NAME}.zip" \
+              --title "${GITHUB_REF_NAME}" \
+              "${NOTES_ARGS[@]}"
+          fi

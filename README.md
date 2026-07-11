@@ -1,73 +1,30 @@
 # youtube-web-notification-manager
 
-Tools to bulk-set all your YouTube subscriptions to the same notification
-preference (All / Personalised / None), since YouTube has no built-in way to
-do this for more than one channel at a time.
+Bulk-set all your YouTube subscriptions to the same notification preference
+(All / Personalised / None), since YouTube has no built-in way to do this for
+more than one channel at a time.
 
-- [`scripts/mute-all-subscriptions.js`](scripts/mute-all-subscriptions.js) — a
-  one-off browser console script (see below).
-- [`extension/firefox/`](extension/firefox/) — a Firefox extension version
-  with an on-page button and a settings panel, currently local-install only
-  (not published to addons.mozilla.org). See
-  [`extension/firefox/README.md`](extension/firefox/README.md) for install
-  instructions.
-- [`extension/chrome/`](extension/chrome/) — the same extension for Chrome,
-  currently local-install only (not published to the Chrome Web Store). See
-  [`extension/chrome/README.md`](extension/chrome/README.md) for install
-  instructions.
+None of these touch cookies, auth tokens, or make raw HTTP requests — they
+all drive YouTube's own page UI (open each channel's notification menu,
+click the target option), so there's nothing to reverse-engineer and no
+credentials are ever exposed.
 
-## Console script usage
+## Browser extensions (recommended)
 
-1. Sign in to YouTube and open https://www.youtube.com/feed/channels
-2. Let the page finish loading.
-3. Open DevTools (F12) → Console tab.
-4. Paste the contents of [`scripts/mute-all-subscriptions.js`](scripts/mute-all-subscriptions.js) and press Enter.
-5. Watch the console output. It logs each channel as it's set (`[set] "..." -> "..."`),
-   and warns/errors if something couldn't be found for a particular channel.
-6. It auto-scrolls to pick up channels that load lazily, and stops once a few
-   scrolls in a row find nothing new.
+An on-page button next to the sort dropdown on `youtube.com/feed/channels`
+opens a panel to pick the preference, dry-run/limit the run, watch live
+progress, and stop partway through — plus a settings page for advanced
+tuning. Currently local-install only (not published to any extension store).
 
-Re-running the script is safe: before clicking anything, it checks whether a
-channel is already set to `TARGET_PREFERENCE` (via the menu item's selected
-state) and skips it with a `[skip] "..." already set to "..."` log — so
-already-matching channels never get an extra request sent for them.
+- [`extension/firefox/`](extension/firefox/)
+- [`extension/chrome/`](extension/chrome/)
 
-### Choosing the preference
+Both share the same code, in [`extension/shared/`](extension/shared/); see
+either folder's README for install steps (there's a one-time build step to
+assemble a loadable copy — `node extension/build.js`).
 
-At the top of the script, `TARGET_PREFERENCE` controls what every channel
-gets set to — one of `'All'`, `'Personalised'`, or `'None'` (default: `'None'`,
-i.e. mute).
+## Standalone console script
 
-### Test before applying
-
-The script starts in dry-run mode by default (`DRY_RUN = true` near the top,
-with `LIMIT = 5` so it only touches the first 5 channels). In this mode it
-opens each channel's notification menu, confirms it can find the
-`TARGET_PREFERENCE` option, logs `[dry-run] would set "..." to "..."`, and
-closes the menu without clicking anything — nothing on your account changes.
-
-1. Paste the script as-is and run it first. Check the console: every channel
-   should get a `[dry-run]` line, with no `[fail]`/`[error]` lines.
-2. If that looks right, edit the constants at the top of the script before
-   pasting again:
-   - `TARGET_PREFERENCE` to the level you actually want
-   - `DRY_RUN = false` to actually apply the change
-   - `LIMIT = null` to process all channels instead of just the first 5
-
-### Troubleshooting
-
-YouTube's own UI code throws a harmless but noisy console error in response
-to the script's clicks; by default the script filters that specific error out
-so the console stays readable. If something isn't working and you want to see
-everything (including that noise, in case it's relevant), set `DEBUG = true`
-at the top of the script before pasting.
-
-## How it works
-
-The script drives the real page UI: for each channel row it clicks the
-notification bell button, waits for the dropdown (All / Personalised / None /
-Unsubscribe) to open, and clicks the option matching `TARGET_PREFERENCE`. It
-does not make raw HTTP requests or touch cookies/auth tokens directly —
-YouTube's own frontend code handles that when the button is clicked, so
-there's nothing to reverse-engineer and no credentials are ever exposed.
-Small randomized delays are used between actions.
+Prefer not to install anything? [`standalone-script/`](standalone-script/)
+has a one-off script you paste into the DevTools console and run — same
+underlying logic as the extensions, no install, nothing left behind.
