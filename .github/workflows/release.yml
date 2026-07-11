@@ -40,9 +40,22 @@ jobs:
               "youtube-notification-manager-chrome-${GITHUB_REF_NAME}.zip" \
               --clobber
           else
+            # --generate-notes' auto-detection of the previous release isn't
+            # reliable here (e.g. it can miss releases whose commit isn't a
+            # git ancestor of this one, such as after a rebase) - look it up
+            # explicitly the same way the "Previous tag" picker in the
+            # release UI does: the most recently published other release.
+            PREVIOUS_TAG=$(gh release list --exclude-drafts --json tagName,createdAt \
+              --jq '[.[] | select(.tagName != env.GITHUB_REF_NAME)] | sort_by(.createdAt) | last | .tagName // empty')
+
+            NOTES_ARGS=(--generate-notes)
+            if [ -n "$PREVIOUS_TAG" ]; then
+              NOTES_ARGS+=(--notes-start-tag "$PREVIOUS_TAG")
+            fi
+
             gh release create "${GITHUB_REF_NAME}" \
               "youtube-notification-manager-firefox-${GITHUB_REF_NAME}.zip" \
               "youtube-notification-manager-chrome-${GITHUB_REF_NAME}.zip" \
               --title "${GITHUB_REF_NAME}" \
-              --generate-notes
+              "${NOTES_ARGS[@]}"
           fi
