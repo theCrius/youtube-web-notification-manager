@@ -100,10 +100,13 @@ async function runBulkUpdate(settings, { onLog, shouldStop } = {}) {
       return "unavailable";
     }
 
-    // The currently-active option carries aria-selected="true"/is-selected on
-    // the ytd-menu-service-item-renderer itself. If it's already the target,
-    // close without clicking so we never fire a redundant request.
-    if (targetItem.getAttribute("aria-selected") === "true" || targetItem.hasAttribute("is-selected")) {
+    // The currently-active option carries a bare is-selected attribute on the
+    // ytd-menu-service-item-renderer itself. aria-selected/the iron-selected
+    // class are NOT reliable for this - they reflect a roving-tabindex
+    // keyboard-focus default that always lands on the first item ("All")
+    // regardless of the real preference. If it's already the target, close
+    // without clicking so we never fire a redundant request.
+    if (targetItem.hasAttribute("is-selected")) {
       log(`[skip] "${name}" already set to "${targetPreference}"`);
       closeAnyOpenMenu();
       await jitter();
