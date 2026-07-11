@@ -9,7 +9,39 @@ permissions:
   contents: write
 
 jobs:
+  # Cheap gate that decides whether this tag is actually a release tag at
+  # all. Only vX.Y.Z (real release) and vX.Y.Z-rc / vX.Y.Z-rcN (release
+  # candidate, not for publishing) tags proceed - anything else (e.g. the
+  # v0.0.1-test style tags used to test this workflow itself) is ignored
+  # entirely, with no build/zip/release steps run.
+  check-tag:
+    runs-on: ubuntu-latest
+    outputs:
+      should_release: ${{ steps.check.outputs.should_release }}
+      version: ${{ steps.check.outputs.version }}
+      prerelease: ${{ steps.check.outputs.prerelease }}
+    steps:
+      - name: Check tag format
+        id: check
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          if [[ "$TAG" =~ ^v([0-9]+\.[0-9]+\.[0-9]+)(-rc[0-9]*)?$ ]]; then
+            echo "should_release=true" >> "$GITHUB_OUTPUT"
+            echo "version=${BASH_REMATCH[1]}" >> "$GITHUB_OUTPUT"
+            if [ -n "${BASH_REMATCH[2]}" ]; then
+              echo "prerelease=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "prerelease=false" >> "$GITHUB_OUTPUT"
+            fi
+          else
+            echo "should_release=false" >> "$GITHUB_OUTPUT"
+            echo "prerelease=false" >> "$GITHUB_OUTPUT"
+            echo "Tag '$TAG' doesn't match vX.Y.Z or vX.Y.Z-rc[N] - skipping release entirely."
+          fi
+
   release:
+    needs: check-tag
+    if: needs.check-tag.outputs.should_release == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -19,7 +51,9 @@ jobs:
           node-version: 20
 
       - name: Build extensions
-        run: node extension/build.js
+        run: |
+          export EXTENSION_VERSION="${{ needs.check-tag.outputs.version }}"
+          node extension/build.js
 
       - name: Zip extensions
         run: |
@@ -30,7 +64,13 @@ jobs:
       - name: Create or update GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PRERELEASE: ${{ needs.check-tag.outputs.prerelease }}
         run: |
+          PRERELEASE_ARGS=()
+          if [ "$PRERELEASE" = "true" ]; then
+            PRERELEASE_ARGS+=(--prerelease)
+          fi
+
           # A release can already exist for this tag (e.g. created via GitHub's
           # web UI, which has no way to push a bare tag without also drafting
           # a release). Upload to it instead of failing in that case.
@@ -57,5 +97,6 @@ jobs:
               "youtube-notification-manager-firefox-${GITHUB_REF_NAME}.zip" \
               "youtube-notification-manager-chrome-${GITHUB_REF_NAME}.zip" \
               --title "${GITHUB_REF_NAME}" \
-              "${NOTES_ARGS[@]}"
+              "${NOTES_ARGS[@]}" \
+              "${PRERELEASE_ARGS[@]}"
           fi

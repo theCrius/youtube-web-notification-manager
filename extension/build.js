@@ -12,6 +12,9 @@
 // Add-on") - no bundler, just plain file copies.
 //
 // Usage: node extension/build.js
+// Optionally set EXTENSION_VERSION to stamp manifest.json's "version" field
+// in the built output (e.g. from a git tag in CI) - see applyVersionOverride
+// below for why this doesn't just take the raw tag name as-is.
 
 const fs = require("fs");
 const path = require("path");
@@ -21,6 +24,11 @@ const SHARED_DIR = path.join(EXTENSION_DIR, "shared");
 const DIST_DIR = path.join(EXTENSION_DIR, "dist");
 const BROWSERS = ["firefox", "chrome"];
 
+// Extension manifest versions must be 1-4 dot-separated integers (no "v"
+// prefix, no prerelease suffixes like "-test") - see
+// https://developer.chrome.com/docs/extensions/reference/manifest/version
+const MANIFEST_VERSION_PATTERN = /^\d+(\.\d+){0,3}$/;
+
 function copyFile(src, destDir) {
   fs.mkdirSync(destDir, { recursive: true });
   fs.copyFileSync(src, path.join(destDir, path.basename(src)));
@@ -28,6 +36,23 @@ function copyFile(src, destDir) {
 
 function listFiles(dir) {
   return fs.readdirSync(dir).filter((name) => fs.statSync(path.join(dir, name)).isFile());
+}
+
+function applyVersionOverride(destDir) {
+  const requestedVersion = process.env.EXTENSION_VERSION;
+  if (!requestedVersion) return;
+
+  if (!MANIFEST_VERSION_PATTERN.test(requestedVersion)) {
+    console.warn(
+      `Not stamping version: "${requestedVersion}" isn't a valid manifest version (expected 1-4 dot-separated integers, e.g. "1.0.2"). Leaving the source manifest's version as-is.`
+    );
+    return;
+  }
+
+  const manifestPath = path.join(destDir, "manifest.json");
+  const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf-8"));
+  manifest.version = requestedVersion;
+  fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + "\n");
 }
 
 for (const browser of BROWSERS) {
@@ -44,6 +69,8 @@ for (const browser of BROWSERS) {
     if (file === "README.md") continue; // dev doc, not part of the loadable extension
     copyFile(path.join(srcDir, file), destDir);
   }
+
+  applyVersionOverride(destDir);
 
   console.log(`Built extension/dist/${browser}/`);
 }
