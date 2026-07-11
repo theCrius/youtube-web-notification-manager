@@ -19,7 +19,13 @@ jobs:
           node-version: 20
 
       - name: Build extensions
-        run: node extension/build.js
+        run: |
+          # Strip the leading "v" from tags like "v1.0.2" -> "1.0.2", the
+          # format extension manifests require. build.js skips stamping this
+          # instead of failing when it isn't a valid version (e.g. the
+          # "-test" suffix on test tags), so this is safe either way.
+          export EXTENSION_VERSION="${GITHUB_REF_NAME#v}"
+          node extension/build.js
 
       - name: Zip extensions
         run: |
