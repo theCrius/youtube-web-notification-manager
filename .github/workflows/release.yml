@@ -27,12 +27,22 @@ jobs:
           zip -r "../../youtube-notification-manager-firefox-${GITHUB_REF_NAME}.zip" firefox
           zip -r "../../youtube-notification-manager-chrome-${GITHUB_REF_NAME}.zip" chrome
 
-      - name: Create GitHub Release
+      - name: Create or update GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create "${GITHUB_REF_NAME}" \
-            "youtube-notification-manager-firefox-${GITHUB_REF_NAME}.zip" \
-            "youtube-notification-manager-chrome-${GITHUB_REF_NAME}.zip" \
-            --title "${GITHUB_REF_NAME}" \
-            --generate-notes
+          # A release can already exist for this tag (e.g. created via GitHub's
+          # web UI, which has no way to push a bare tag without also drafting
+          # a release). Upload to it instead of failing in that case.
+          if gh release view "${GITHUB_REF_NAME}" >/dev/null 2>&1; then
+            gh release upload "${GITHUB_REF_NAME}" \
+              "youtube-notification-manager-firefox-${GITHUB_REF_NAME}.zip" \
+              "youtube-notification-manager-chrome-${GITHUB_REF_NAME}.zip" \
+              --clobber
+          else
+            gh release create "${GITHUB_REF_NAME}" \
+              "youtube-notification-manager-firefox-${GITHUB_REF_NAME}.zip" \
+              "youtube-notification-manager-chrome-${GITHUB_REF_NAME}.zip" \
+              --title "${GITHUB_REF_NAME}" \
+              --generate-notes
+          fi
