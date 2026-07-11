@@ -57,9 +57,12 @@ jobs:
 
       - name: Zip extensions
         run: |
-          cd extension/dist
-          zip -r "../../youtube-notification-manager-firefox-${GITHUB_REF_NAME}.zip" firefox
-          zip -r "../../youtube-notification-manager-chrome-${GITHUB_REF_NAME}.zip" chrome
+          # Zip each browser's *contents*, not the folder itself - Firefox's
+          # AMO expects manifest.json at the zip's root, not nested inside a
+          # "firefox/" entry (which is what `zip -r out.zip firefox` from the
+          # parent dir would produce).
+          (cd extension/dist/firefox && zip -r "$GITHUB_WORKSPACE/youtube-notification-manager-firefox-${GITHUB_REF_NAME}.zip" .)
+          (cd extension/dist/chrome && zip -r "$GITHUB_WORKSPACE/youtube-notification-manager-chrome-${GITHUB_REF_NAME}.zip" .)
 
       - name: Create or update GitHub Release
         env:
